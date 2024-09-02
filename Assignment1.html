@@ -547,7 +547,9 @@ trends, there was a decrease from June to August becuause of the Supreme
 Court decision as mentioned from the <a href="https://projects.fivethirtyeight.com/2022-election-forecast/senate/">link</a>.
 This led to the Democrats having a forecast of keeping control of the
 senate for the 2022 Elections, but around October the forecasts started
-to shift towards the Republicans once again.</p>
+to shift towards the Republicans once again. Similarly to the House of
+Represenatives forecasts we are seeing a similar trend for the Senate in
+the National Turnout over time.</p>
 <pre class="r"><code>filtered_data_subset1$forecastdate &lt;- as.Date(filtered_data_subset1$forecastdate, format = &quot;%m/%d/%y&quot;)
 
 filtered_data_subset1 &lt;- filtered_data_subset1 %&gt;% arrange(forecastdate)
@@ -582,7 +584,16 @@ for the senate would be to include the Vice President in case there is a
 49-49 tie, which will increase the accuracy of such forecasts.</p>
 <p>The House of Representatives results also yielded only 9 seats gained
 for the Republicans which led to a total of 222 seats for the
-Republicans, whereas the Democrats have a total of 213 seats.</p>
+Republicans, whereas the Democrats have a total of 213 seats. It did
+accurately predict the regain of Republican control of the house but the
+numbers were off by 8 seats, which may indicate some margins of errors
+or some external variables that have led to this discrepancy.</p>
+<p>I also included the voter turnouts, which both state there were a
+large number of voter turnouts because of the Supreme Court decision
+mentioned in fivethirtyeight in this <a href="https://fivethirtyeight.com/features/dobbs-abortion-opinion-liability-republicans/">link</a>.
+Further investigation will be needed along with improving the
+simulations that were made to include factors that may lead to futher
+changes in the forecasts for both the house and senate races.</p>
 </div>
 
 

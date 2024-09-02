@@ -1,0 +1,190 @@
+---
+title: "Data 607 - Basic Loading and Transformation"
+author: "Anthony Josue Roman"
+output: html_document
+date: "2024-09-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+require(ggplot2)
+require(mosaic)
+require(dplyr)
+require(mosaicData)
+require(tidyr)
+require(tidyverse)
+require(ggiraphExtra)
+require(sf)
+require(knitr)
+require(patchwork)
+require(scales)
+library(ggplot2)
+library(mosaic)
+library(dplyr)
+library(mosaicData)
+library(tidyr)
+library(tidyverse)
+library(ggiraphExtra)
+library(sf)
+library(knitr)
+library(patchwork)
+library(scales)
+```
+
+The following libraries are required:
+```{r echo=TRUE}
+library(ggplot2)
+library(mosaic)
+library(dplyr)
+library(mosaicData)
+library(tidyr)
+library(tidyverse)
+library(ggiraphExtra)
+library(sf)
+library(knitr)
+library(patchwork)
+library(scales)
+```
+
+## General Overview
+
+### 2022 Election Forecast in the United States
+
+The 2022 Elections, or midterm elections play a pivotal role in the success of the presidential term of the current elected official. This has been a thing since the formation of the United States, and if the house shifts away from the current party who controls the house, it is a key indicator that the current administration is not fulfilling the promises they have made during the presidential elections. Other events that may occur throughout the time between these election cycles can also cause swings from one direction to another, which we have seen throughout many midterm elections. The data I have gathered stems from the FiveThirtyEight data set from the following link: <https://projects.fivethirtyeight.com/2022-election-forecast/>.
+
+The Democratic Party has currently been in control of both the house and the senate since the 2020 Elections, but the current forecasts state the Democrats are at risk of losing control of the house and a slight risk on losing control of the Senate. The one thing people are also unaware of are the elections that take place for the governors of certain states, and the Republicans have had control of more states than the Democrats since 2010.
+
+For this assignment I will talk mostly about the house of Representatives, since we know the Republicans have won the majority in the 2022 Midterm Elections, and the Senate Races to show changes.
+
+The following files are shown below:
+
+```{r echo=TRUE}
+house1 <- read.csv('election-forecasts-2022/house_district_toplines_2022.csv')
+house2 <- read.csv('election-forecasts-2022/house_national_toplines_2022.csv')
+house3 <- read.csv('election-forecasts-2022/house_seat_distribution_2022.csv')
+house4 <- read.csv('election-forecasts-2022/house_steps_2022.csv')
+senate1 <- read.csv('election-forecasts-2022/senate_state_toplines_2022.csv')
+senate2 <- read.csv('election-forecasts-2022/senate_national_toplines_2022.csv')
+senate3 <- read.csv('election-forecasts-2022/senate_seat_distribution_2022.csv')
+senate4 <- read.csv('election-forecasts-2022/senate_steps_2022.csv')
+```
+
+## House of Representatives Forecasts
+
+The projections of the 2022 Elections for the house stem from the following link: <https://projects.fivethirtyeight.com/2022-election-forecast/house/>
+
+With the following datasets from the house, we will see the following forecasts from the file called "house_national_toplines_2022.csv" which has a forecast within from June 1st, 2022 until November 8th, 2022.
+
+I will also filter out the data to include only the "_deluxe" expressions along with decreasing the number of columns to make the data 'cleaner'.
+
+```{r echo=TRUE}
+filtered_data <- house2 %>%
+  filter(grepl("_deluxe", expression))
+
+head(filtered_data[, c("forecastdate" , "chamber_Dparty", "chamber_Rparty", "mean_seats_Dparty", "mean_seats_Rparty", "median_seats_Dparty", "median_seats_Rparty", "total_national_turnout")])
+```
+
+After filtering out the data, we will generate a plot to show the projected number of seats each party will 'control' from June to November over time. I will use the mean_seats_'x'party variables for better visibility.
+
+Note: 'x' will be either Democratic or Republican.
+
+```{r echo=TRUE}
+filtered_data_subset <- filtered_data[, c("forecastdate" , "chamber_Dparty", "chamber_Rparty", "mean_seats_Dparty", "mean_seats_Rparty", "median_seats_Dparty", "median_seats_Rparty", "total_national_turnout")]
+
+ggplot(filtered_data_subset, aes(x = as.Date(forecastdate, format="%m/%d/%y"))) +
+  geom_line(aes(y = mean_seats_Rparty, color = "Republican Party"), linewidth = 1) +
+  geom_line(aes(y = mean_seats_Dparty, color = "Democratic Party"), linewidth = 1) +
+  scale_color_manual(values = c("Republican Party" = "red", "Democratic Party" = "blue")) +
+  labs(title = "Projected Number of Seats Each Party Will Control Over Time",
+       x = "Date",
+       y = "Number of Seats",
+       color = "Party") +
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+As we can see from the following plots over time, the number of seats projected to be controlled by the Republican Party decreased over time from June to October, but then increased from October through November. From the [link](https://projects.fivethirtyeight.com/2022-election-forecast/house/) for the house election forecast, it was mentioned that the Supreme Court decision was a key factor for this decrease, which is common for majority of the midterm elections, but the Republican Party still had a large lead to gain control of the house at the beginning of the forecasts around June 2022. The voter turnout also increased after the Supreme Court decision as shown below:
+
+```{r echo=TRUE}
+filtered_data_subset$forecastdate <- as.Date(filtered_data_subset$forecastdate, format = "%m/%d/%y")
+
+filtered_data_subset <- filtered_data_subset %>% arrange(forecastdate)
+
+ggplot(filtered_data_subset, aes(x = forecastdate, y = total_national_turnout)) +
+  geom_line(color = "blue", linewidth = 1) +
+  geom_smooth(method = "loess", color = "green", se = FALSE, linewidth = 1.5) +
+  labs(title = "National Turnout Over Time",
+       x = "Date",
+       y = "Total National Turnout") +
+  scale_x_date(date_labels = "%b", date_breaks = "1 month") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+        axis.title.x = element_text(size = 14),
+        axis.title.y = element_text(size = 14),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Senate Forecasts
+
+Similar to the house projections, the projections of the 2022 Elections for the house stem from the following link: <https://projects.fivethirtyeight.com/2022-election-forecast/senate/>
+
+With the following datasets from the house, we will see the following forecasts from the file called "senate_national_toplines_2022.csv" which has a forecast within from June 1st, 2022 until November 8th, 2022.
+
+I will also filter out the data to include only the "_deluxe" expressions along with decreasing the number of columns to make the data 'cleaner'.
+
+```{r echo=TRUE}
+filtered_data1 <- senate2 %>%
+  filter(grepl("_deluxe", expression))
+
+head(filtered_data1[, c("forecastdate" , "chamber_Dparty", "chamber_Rparty", "mean_seats_Dparty", "mean_seats_Rparty", "median_seats_Dparty", "median_seats_Rparty", "total_national_turnout")])
+```
+
+Similar to the House ggplot, we will utilize the data from the senate to show the changes over time. I will use the mean_seats_'x'party variables for better visibility.
+
+Note: 'x' will be either Democratic or Republican.
+
+```{r echo=TRUE}
+filtered_data_subset1 <- filtered_data1[, c("forecastdate" , "chamber_Dparty", "chamber_Rparty", "mean_seats_Dparty", "mean_seats_Rparty", "median_seats_Dparty", "median_seats_Rparty", "total_national_turnout")]
+
+ggplot(filtered_data_subset1, aes(x = as.Date(forecastdate, format="%m/%d/%y"))) +
+  geom_line(aes(y = mean_seats_Rparty, color = "Republican Party"), linewidth = 1) +
+  geom_line(aes(y = mean_seats_Dparty, color = "Democratic Party"), linewidth = 1) +
+  scale_color_manual(values = c("Republican Party" = "red", "Democratic Party" = "blue")) +
+  labs(title = "Projected Number of Seats Each Party Will Control Over Time",
+       x = "Date",
+       y = "Number of Seats",
+       color = "Party") +
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+With the Senate projections over time, you can tell the Democrats gained the majority from August to mid-October,  but have lost their momentum by the time of elections, which was attributed by the current events between August 2022 and November 2022. Similar to the House trends, there was a decrease from June to August becuause of the Supreme Court decision as mentioned from the [link](https://projects.fivethirtyeight.com/2022-election-forecast/senate/). This led to the Democrats having a forecast of keeping control of the senate for the 2022 Elections, but around October the forecasts started to shift towards the Republicans once again. Similarly to the House of Represenatives forecasts we are seeing a similar trend for the Senate in the National Turnout over time.
+
+```{r echo=TRUE}
+filtered_data_subset1$forecastdate <- as.Date(filtered_data_subset1$forecastdate, format = "%m/%d/%y")
+
+filtered_data_subset1 <- filtered_data_subset1 %>% arrange(forecastdate)
+
+ggplot(filtered_data_subset1, aes(x = forecastdate, y = total_national_turnout)) +
+  geom_line(color = "red", linewidth = 1) +
+  geom_smooth(method = "loess", color = "purple", se = FALSE, linewidth = 1.5) +
+  labs(title = "National Turnout Over Time",
+       x = "Date",
+       y = "Total National Turnout") +
+  scale_x_date(date_labels = "%b", date_breaks = "1 month") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+        axis.title.x = element_text(size = 14),
+        axis.title.y = element_text(size = 14),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Conclusions
+
+Upon utilizing the data that I have obtained from fivethirthyeight, the only issue that I noticed was the projected Senate Race was expected to have the Republicans gain control of the senate, which did not occur as the Senate gained a seat from Pennsylvania on 2022. With this end result that happened in the Senate, further analysis needs to be conducted to determine if there were any anomalies or biases that may have attributed to this forecast being incorrect. With the senate race being close, there was definitely possible room for error, hence why the forecast was incorrect. Another variable the forecasts should include for the senate would be to include the Vice President in case there is a 49-49 tie, which will increase the accuracy of such forecasts.
+
+The House of Representatives results also yielded only 9 seats gained for the Republicans which led to a total of 222 seats for the Republicans, whereas the Democrats have a total of 213 seats.
